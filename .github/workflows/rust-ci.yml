@@ -1,0 +1,23 @@
+name: Rust CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Format check
+        run: cargo fmt --all -- --check
+      - name: Test workspace
+        run: cargo test --workspace
+      - name: Run offline simulator
+        run: cargo run -p lcf-sim
