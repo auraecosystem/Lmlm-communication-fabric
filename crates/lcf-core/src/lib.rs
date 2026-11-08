@@ -1,4 +1,5 @@
 //! Deterministic transport-neutral LCF primitives.
+pub mod delivery;
 pub mod discovery;
 pub mod routing;
 pub mod storage;
