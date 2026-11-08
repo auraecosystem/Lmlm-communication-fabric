@@ -3,12 +3,12 @@
 //! Both long-term Ed25519 public keys must already be trusted by the caller.
 //! The handshake binds identities, ephemeral keys and fresh nonces into signed
 //! transcripts, then derives separate directional AEAD keys with HKDF-SHA256.
-use chacha20poly1305::{aead::{Aead, Payload}, ChaCha20Poly1305, KeyInit, Nonce};
 use ed25519_dalek::{Signature, Signer, SigningKey, Verifier, VerifyingKey};
 use hkdf::Hkdf;
 use rand_core::{OsRng, RngCore};
 use sha2::Sha256;
 use x25519_dalek::{PublicKey, StaticSecret};
+use crate::secure::SessionCipher;
 
 const HELLO_DOMAIN: &[u8] = b"LMLM-LCF/1 handshake hello";
 const RESPONSE_DOMAIN: &[u8] = b"LMLM-LCF/1 handshake response";
@@ -21,6 +21,7 @@ pub enum HandshakeError {
     IdentityMismatch,
     InvalidSignature,
     KeyDerivationFailed,
+    NonContributoryKey,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -52,8 +53,12 @@ pub struct SessionMaterial {
 }
 
 impl SessionMaterial {
-    pub fn initiator_cipher(&self) -> ChaCha20Poly1305 {
-        ChaCha20Poly1305::new_from_slice(&self.send_key).expect("32-byte key")
+    /// Consumes the material into independent send and receive cipher states.
+    pub fn into_sessions(self) -> (SessionCipher, SessionCipher) {
+        (
+            SessionCipher::new(self.send_key, self.send_nonce_prefix),
+            SessionCipher::new(self.receive_key, self.receive_nonce_prefix),
+        )
     }
     pub fn responder_material(&self) -> Self {
         Self {
@@ -163,6 +168,7 @@ impl HandshakeInitiator {
             .map_err(|_| HandshakeError::InvalidSignature)?;
         let peer_public = PublicKey::from(response.responder_ephemeral);
         let shared = self.secret.diffie_hellman(&peer_public);
+        if !shared.was_contributory() { return Err(HandshakeError::NonContributoryKey); }
         derive_material(
             shared.as_bytes(), &self.local_id, &self.peer_id,
             &self.hello.ephemeral_public, &response.responder_ephemeral,
@@ -197,6 +203,7 @@ pub fn accept_hello(
     response.signature = signing_key.sign(&response_bytes(&response)?).to_bytes();
     let peer_public = PublicKey::from(hello.ephemeral_public);
     let shared = secret.diffie_hellman(&peer_public);
+    if !shared.was_contributory() { return Err(HandshakeError::NonContributoryKey); }
     let material = derive_material(
         shared.as_bytes(), &hello.initiator_id, &local_id,
         &hello.ephemeral_public, &responder_ephemeral,
