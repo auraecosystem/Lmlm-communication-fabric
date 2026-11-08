@@ -1,5 +1,5 @@
 //! Bounded acknowledgement and retry tracking for reliable message delivery.
-use lcf_core::MessageId;
+use crate::MessageId;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
