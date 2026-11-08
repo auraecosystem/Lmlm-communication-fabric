@@ -1,39 +1,39 @@
 # LMLM Communication Fabric (LCF)
 
-LCF is an internet-independent, hybrid communications fabric for local and regional connectivity. It is designed to operate across direct device links, local Wi-Fi networks, Bluetooth, long-range low-bandwidth radio, and delay-tolerant relaying.
+LCF is an internet-independent, hybrid communications fabric for local and regional connectivity. Its core is transport-neutral and supports direct links, local IP networks and delay-tolerant relaying.
 
-## Design principles
+## Implemented in this stage
 
-- **Offline first:** no cloud account, DNS, public internet, or central server is required for local operation.
-- **Transport independent:** applications use a common message API while transports are replaceable.
-- **Store, carry, forward:** messages can persist on a node and move when a route becomes available.
-- **Secure by default:** authenticate peers, encrypt payloads end-to-end, reject replays, and enforce bounded resource use.
-- **AI optional:** LMLM may advise routing and diagnostics, but never sits in the trusted forwarding or cryptographic path.
-
-## Repository status
-
-This repository begins with an executable protocol-core scaffold and simulator. Hardware drivers and radio interoperability are staged behind transport interfaces and are not claimed to be implemented yet.
+- Peer lease registry with advertisement sequence handling and expiry.
+- Destination route table with metric-based replacement and neighbor invalidation.
+- Versioned, bounded binary envelope codec.
+- Real UDP/IP transport adapter for offline LAN/Wi-Fi networks.
+- BLE GATT framing contract and MTU-aware fragmentation/reassembly primitives.
+- Append-only persistent message spool with restart recovery.
 
 ## Workspace
 
-- `crates/lcf-core`: message envelope, validation, duplicate suppression, TTL and forwarding decisions.
-- `crates/lcf-sim`: deterministic in-memory multi-hop simulator.
-- `docs/architecture.md`: system architecture and trust boundaries.
-- `docs/hardware-roadmap.md`: phased device and radio plan.
+- `crates/lcf-core`: envelope, validation, discovery, routing and persistence.
+- `crates/lcf-transport`: UDP transport, binary wire codec and BLE framing primitives.
+- `crates/lcf-sim`: runnable offline relay demonstration.
+- `docs/architecture.md`: layers and trust boundaries.
+- `docs/hardware-roadmap.md`: staged device plan.
 
-## Quick start
+## Run
 
-Requires Rust stable.
+Requires Rust stable:
 
 ```sh
 cargo test --workspace
 cargo run -p lcf-sim
 ```
 
-## Initial hardware direction
+## Transport status
 
-The first low-cost reference node is an ESP32-S3-class controller paired with an SX1262 LoRa transceiver, with BLE/Wi-Fi for nearby devices. LoRa is for compact asynchronous messages and telemetry, not broadband voice or video. Frequency, power, antenna, and equipment approvals must comply with local spectrum rules before transmission.
+UDP is implemented for nodes that share an IP LAN/hotspot; it does not require internet access. BLE has a defined GATT service contract and tested frame fragmentation/reassembly, but platform-specific CoreBluetooth (iOS), Android BLE, and embedded BLE drivers are not yet included. Wi-Fi Direct group formation is OS-specific; the UDP adapter uses an already-established local IP interface.
 
-## Security note
+## Security status
 
-The initial scaffold does not claim production cryptography or radio interoperability. Before field deployment, integrate audited cryptographic libraries, persistent key storage, signed firmware updates, abuse controls, and hardware-in-the-loop tests.
+This stage does **not** claim authenticated peer identity or production encryption. Treat UDP/BLE links as untrusted. Do not send sensitive plaintext across an untrusted network until the audited LCF-SEC implementation is integrated. Discovery is not authorization. Production identity, replay protection, encrypted sessions, key storage and signed updates remain mandatory before field deployment.
+
+LoRa remains reserved for compact asynchronous messages and telemetry, not broadband voice/video. Verify Nigerian spectrum, power, equipment approval and licensing requirements before radio transmission.

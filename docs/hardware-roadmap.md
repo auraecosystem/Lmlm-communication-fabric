@@ -1,25 +1,17 @@
 # Hardware Roadmap
 
-## Phase 0 — software first
+## Software stage
 
-Run the Rust core and deterministic simulator on a laptop or Linux host. Validate offline queues, expiry, hop limits, duplicate suppression, partition recovery and resource limits before buying radios.
+Run `cargo test --workspace` and the simulator on a host. Use two local processes or devices on the same Wi-Fi hotspot/LAN to exercise UDP without internet.
 
-## Phase 1 — phone-to-phone
+## BLE stage
 
-Prototype nearby exchange over BLE and local Wi-Fi. Mobile applications must expose transport capability and permissions clearly and must tolerate background-execution limits imposed by mobile operating systems.
+The repository defines LCF GATT UUIDs and MTU fragmentation/reassembly. Implement native CoreBluetooth on iOS, Android BLE, and the chosen embedded BLE stack behind `BleFrameIo`. iOS background execution and peripheral-role restrictions need explicit testing.
 
-## Phase 2 — first radio node
+## Radio node
 
-Reference direction: ESP32-S3-class MCU + SX1262 LoRa transceiver + antenna + battery management + optional GNSS and removable storage. Use BLE/Wi-Fi for local device access and LoRa for compact asynchronous packets.
+Reference direction: ESP32-S3 + SX1262 LoRa + antenna + battery management + optional GNSS/storage. LoRa driver and radio framing are not included in this commit.
 
-## Phase 3 — gateway and mesh
+## Compliance
 
-Add a Linux/Raspberry Pi gateway, persistent message store, radio interface abstraction, monitoring and controlled bridging between local clusters.
-
-## Phase 4 — voice and advanced links
-
-Add voice over Wi-Fi mesh; evaluate DMR, amateur radio and satellite only where lawful, licensed and technically appropriate.
-
-## Compliance and safety
-
-Before transmitting, verify the permitted frequency bands, duty-cycle limits, output power, antenna requirements, equipment type approval and licensing requirements with the relevant Nigerian authorities. This repository does not authorize radio transmission.
+Before transmitting, verify Nigerian frequency allocation, duty cycle, power, antenna, equipment approval and licensing requirements with the Nigerian Communications Commission. This repository does not authorize radio transmission.

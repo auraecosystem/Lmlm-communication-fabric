@@ -2,33 +2,27 @@
 
 ## Layers
 
-1. **Application:** text, voice signalling, file exchange, local broadcast and synchronization.
-2. **Messaging service:** identity addressing, message IDs, expiry, priority, acknowledgements and persistence.
-3. **Network control:** peer discovery, neighbor state, route selection and topology convergence.
-4. **Transport adapters:** BLE, Wi-Fi Direct/local Wi-Fi, Ethernet, LoRa and later licensed radio or satellite links.
-5. **Device runtime:** queues, scheduler, storage quotas, power policy and fault recovery.
+1. Application services.
+2. Messaging and durable spool.
+3. Discovery registry and destination route table.
+4. Transport adapters (UDP/LAN implemented; BLE framing contract provided).
+5. Device runtime and platform radio drivers.
 
-## Operating modes
+## Current implementation
 
-- **Connected mesh:** opportunistic multi-hop routing while links are available.
-- **Delay-tolerant networking:** store-carry-forward when no end-to-end path exists.
-- **Local island:** nodes continue communicating inside a disconnected LAN or radio cluster.
-- **Gateway bridge:** an explicitly configured gateway may bridge clusters; internet is optional, never assumed.
-
-## Message lifecycle
-
-Create -> validate -> encrypt/authenticate (production integration) -> enqueue -> discover neighbor -> select route -> forward -> deduplicate -> deliver -> acknowledge.
-
-Each hop checks expiry, hop budget, size limits and duplicate state. Relays should not need plaintext access to end-to-end encrypted payloads.
+- Peer advertisements use monotonically increasing sequence numbers and expiring leases.
+- Routes are selected by a positive metric; a lower metric replaces a higher one. Neighbor loss invalidates routes through that neighbor.
+- LCF/1 binary envelope parsing is bounded and rejects truncation, invalid UTF-8, oversized fields and trailing bytes.
+- UDP provides actual datagram exchange over a local IP network.
+- BLE uses the documented GATT service/characteristic UUIDs and MTU-aware fragmentation. Native OS/MCU integration remains a platform adapter task.
+- Persistent spool stores length-prefixed frames and calls sync_data after append.
 
 ## Trust boundaries
 
-The transport is untrusted. A discovered peer is not automatically an authorized peer. Production identity should use device keys and explicit trust enrollment. The AI/intelligence adapter is advisory only and cannot authorize peers, alter cryptographic policy, or bypass deterministic packet validation.
+Discovery is not authentication. A peer advertisement must not grant access to private messages. UDP and BLE are untrusted transports. The current codec does not encrypt or authenticate frames; production use requires audited identity and session crypto, replay protection and authorization before accepting sensitive traffic.
+
+The intelligence plane remains advisory. LMLM cannot override packet validation, trust policy or forwarding limits.
 
 ## Voice and bandwidth
 
-Low-latency voice belongs on Wi-Fi mesh or other broadband links. LoRa supports short messages and telemetry only. Do not attempt general voice/video over narrowband LoRa.
-
-## Planned protocol modules
-
-LCF-ID (identity), LCF-DISC (discovery), LCF-ROUTE (routing), LCF-LINK (link framing), LCF-MSG (messaging), LCF-SEC (security), LCF-DTN (store-carry-forward), LCF-SYNC (replication), and LCF-CTRL (management).
+Use Wi-Fi/LAN for real-time voice. BLE is for proximity/control and small transfers. LoRa is for compact asynchronous messages and telemetry, not broadband voice/video.
