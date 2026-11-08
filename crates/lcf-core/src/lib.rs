@@ -1,6 +1,7 @@
 //! Deterministic transport-neutral LCF primitives.
 pub mod delivery;
 pub mod discovery;
+pub mod relay;
 pub mod routing;
 pub mod storage;
 use std::collections::{HashSet,VecDeque};

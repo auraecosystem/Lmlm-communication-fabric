@@ -6,17 +6,20 @@ Offline-first, transport-neutral communications for local and regional networks.
 
 - Lease-based peer discovery with monotonic advertisement sequences.
 - Destination routing table with metric selection, expiry and neighbor invalidation.
+- Deterministic relay engine with route lookup, duplicate suppression, payload/lifetime validation and hop-limit decrement.
 - Bounded LCF/1 binary envelope codec.
 - UDP datagram transport for devices on the same Wi-Fi/LAN without internet.
 - BLE GATT service contract and MTU fragmentation/reassembly primitives.
 - Append-only persistent spool with restart recovery.
 - Ed25519-signed peer statements and ChaCha20-Poly1305 authenticated packet protection.
-- Sliding replay window and bounded acknowledgement/retry tracking with exponential backoff.
+- Mutually authenticated ephemeral X25519 handshake, signed with trusted Ed25519 identity keys.
+- HKDF-SHA256 directional session-key derivation and replay-window protection.
+- Bounded acknowledgement/retry tracking with capped exponential backoff.
 
 ## Workspace
 
-- `crates/lcf-core`: envelope, validation, discovery, routing, delivery and storage.
-- `crates/lcf-transport`: UDP, wire codec, BLE framing and packet security.
+- `crates/lcf-core`: envelope, validation, discovery, routing, relay, delivery and storage.
+- `crates/lcf-transport`: UDP, wire codec, BLE framing, identity handshake and packet security.
 - `crates/lcf-sim`: offline relay demonstration.
 
 ## Run
@@ -28,9 +31,9 @@ cargo run -p lcf-sim
 
 ## Security integration contract
 
-The security primitives use established Ed25519 and ChaCha20-Poly1305 implementations. Session keys must be provisioned by a trusted key-management layer. Each traffic direction must use a distinct, cryptographically random 32-bit nonce prefix for a given key. Never reuse a key/prefix/counter tuple; persist counters safely or rekey before restart. The replay window is updated only after successful authentication.
+The handshake authenticates both ephemeral X25519 public keys by signing the complete identity-bound transcript with pre-trusted Ed25519 keys. HKDF-SHA256 derives separate directional AEAD keys and nonce prefixes. Use `SessionMaterial::into_sessions` to obtain independent send/receive cipher states. The caller remains responsible for secure long-term identity-key storage, trusted public-key distribution, authorization, revocation, key rotation and safe session-state lifecycle. A compromised or incorrectly trusted identity key defeats peer authentication.
 
-This stage does **not** implement an authenticated key exchange, secure key storage, authorization policy, signed software updates or automatic key rotation. Until those are integrated and audited, treat session key provisioning as an operator responsibility and do not claim a production-ready secure mesh.
+Never reuse a directional session key with a prior nonce prefix/counter state. Persist counters safely or discard the session and establish a fresh handshake after restart. Acknowledgements must be authenticated before pending deliveries are removed. The crypto code is a protocol implementation requiring independent review before production deployment.
 
 ## Platform status
 
