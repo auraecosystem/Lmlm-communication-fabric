@@ -1,5 +1,6 @@
 //! Deterministic relay decision engine joining envelope validation, dedup and routes.
-use crate::{DuplicateCache, Envelope, RejectReason, Route, RouteError, RouteTable};
+use crate::{DuplicateCache, Envelope, RejectReason};
+use crate::routing::{Route, RouteError, RouteTable};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RelayError {
