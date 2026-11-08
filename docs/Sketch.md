@@ -932,4 +932,68 @@ The next stage should integrate:
 * Native BLE integration.
 * Network partition recovery and persistent queue synchronization.
 
-The objective is to move from separate transport components to an actual independently operating, secure offline network.
+I’m continuing the LCF implementation as a complete next engineering stage: authenticated peer identity, encrypted session packets, replay protection, delivery reliability, and stronger integration tests. I’ll keep the implementation offline-first and avoid pretending that a secure key exchange or native radio driver exists before it is actually built.
+
+The security layer will initially use explicitly provisioned session keys. That gives us authenticated encryption without inventing a handshake; automatic device-to-device key establishment remains a separate milestone.
+
+Implemented and merged into main
+
+The LMLM Communication Fabric now has its next two engineering stages implemented and verified.
+
+LCF implementation results
+
+Repository: Lmlm-communication-fabric⁠￼
+
+Latest merge: d191189938146cd35ba6f83b775214cfcd1c92bc
+
+What is now implemented
+
+Capability	Implementation
+Peer identity	Ed25519-signed peer statements
+Key exchange	Mutually authenticated ephemeral X25519
+Session derivation	HKDF-SHA256
+Encryption	ChaCha20-Poly1305
+Replay protection	64-packet replay window
+Routing	Destination route lookup and expiry
+Multi-hop relay	Duplicate suppression and hop-limit decrement
+Reliable delivery	Acknowledgement tracking and exponential retries
+Persistence	Append-only message spool and recovery
+Local networking	UDP over existing Wi-Fi/LAN
+Bluetooth	GATT framing, fragmentation and reassembly
+
+Important source files
+
+* crates/lcf-transport/src/handshake.rs — authenticated key exchange.
+* crates/lcf-transport/src/secure.rs — encryption and replay protection.
+* crates/lcf-core/src/relay.rs — multi-hop relay decisions.
+* crates/lcf-core/src/delivery.rs — reliable delivery tracking.
+* docs/architecture.md — updated architecture.
+
+Verification
+
+CI passed
+
+GitHub Actions successfully completed:
+
+* cargo test --workspace
+* cargo run -p lcf-sim
+
+The corrected implementation passed on its verification branch and again after merging into main.
+
+View successful main CI run⁠￼
+
+What remains before production deployment
+
+* Native iOS CoreBluetooth integration.
+* Android BLE and MCU radio drivers.
+* Secure platform key storage and identity provisioning.
+* Authorization, revocation and key rotation.
+* Persistent session-counter management and rekeying.
+* Independent cryptographic and protocol security review.
+* Hardware interoperability testing.
+
+Important: The authenticated handshake and encryption are implemented, but that does not make the entire mesh production-certified. Native radio integration and operational security remain outstanding.
+
+Recommended next milestone
+
+Build the LCF Native Device Runtime: connect the Rust communication core to iOS, Android and embedded-device transport adapters, then test real device-to-device communication and offline network recovery.
