@@ -1,9 +1,0 @@
-[workspace]
-resolver = "2"
-members = ["crates/lcf-core", "crates/lcf-sim", "crates/lcf-transport"]
-
-[workspace.package]
-version = "0.2.0"
-edition = "2021"
-license = "Apache-2.0"
-authors = ["Seriki Walter Yakub"]
