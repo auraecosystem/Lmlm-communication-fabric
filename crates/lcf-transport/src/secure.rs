@@ -13,7 +13,6 @@ const MAX_PEER_ID: usize = 128;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SecurityError {
     InvalidPeerId,
-    InvalidKey,
     InvalidSignature,
     ExpiredStatement,
     MalformedPacket,
@@ -104,7 +103,7 @@ pub struct SessionCipher {
 impl SessionCipher {
     pub fn new(key: [u8; 32], nonce_prefix: [u8; 4]) -> Self {
         Self {
-            cipher: ChaCha20Poly1305::new((&key).into()),
+            cipher: ChaCha20Poly1305::new_from_slice(&key).expect("ChaCha20-Poly1305 requires a 32-byte key"),
             nonce_prefix,
             tx_counter: 0,
             rx_window: ReplayWindow::default(),
